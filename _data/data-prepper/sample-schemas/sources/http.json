@@ -1,0 +1,29 @@
+{
+  "name": "http",
+  "plugin_type": "source",
+  "properties": {
+    "port": {
+      "type": "integer",
+      "required": false,
+      "default": 2021
+    },
+    "path": {
+      "type": "string",
+      "required": false,
+      "default": "/log/ingest"
+    },
+    "ssl": {
+      "type": "boolean",
+      "required": false,
+      "default": false
+    },
+    "ssl_certificate_file": {
+      "type": "string",
+      "required": false
+    },
+    "ssl_key_file": {
+      "type": "string",
+      "required": false
+    }
+  }
+}

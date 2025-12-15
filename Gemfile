@@ -50,4 +50,5 @@ group :development, :test do
   gem 'rspec'
   gem 'rubocop', '~> 1.44', require: false
   gem 'rubocop-rake', require: false
+  gem 'json-schema', '~> 4.0'
 end

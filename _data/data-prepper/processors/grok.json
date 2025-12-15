@@ -1,0 +1,116 @@
+{
+  "name": "grok",
+  "plugin_type": "processor",
+  "description": "The grok processor uses pattern matching to structure and extract important keys from unstructured data.",
+  "properties": {
+    "match": {
+      "type": "object",
+      "description": "Specifies which keys should match specific patterns. Each key is a source field. The value is a list of possible grok patterns to match on. The <code>grok</code> processor will extract values from the first match for each field. Default is an empty response body.",
+      "required": false,
+      "examples": [
+        {
+          "description": "Matches on the specific patterns given.",
+          "example": "%{IPV4:clientip} %{WORD:request} %{POSINT:bytes}"
+        }
+      ]
+    },
+    "target_key": {
+      "type": "string",
+      "description": "Specifies a parent-level key used to store all captures. Default value is <code>null</code> which will write captures into the root of the event.",
+      "required": false,
+      "default": null
+    },
+    "break_on_match": {
+      "type": "boolean",
+      "description": "Specifies whether to match all patterns (<code>true</code>) or stop once the first successful match is found (<code>false</code>). Default is <code>true</code>.",
+      "required": false,
+      "default": true
+    },
+    "keep_empty_captures": {
+      "type": "boolean",
+      "description": "Enables the preservation of <code>null</code> captures from the processed output. Default is <code>false</code>.",
+      "required": false,
+      "default": false
+    },
+    "named_captures_only": {
+      "type": "boolean",
+      "description": "Specifies whether to keep only named captures. Default is <code>true</code>.",
+      "required": false,
+      "default": true
+    },
+    "keys_to_overwrite": {
+      "type": "array",
+      "description": "Specifies which existing keys will be overwritten if there is a capture with the same key value. Default is an empty list.",
+      "required": false,
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "pattern_definitions": {
+      "type": "object",
+      "description": "Allows for a custom pattern that can be used inline inside the response body. Default is an empty response body.",
+      "required": false
+    },
+    "patterns_directories": {
+      "type": "array",
+      "description": "Specifies which directory paths contain the custom pattern files. Default is an empty list.",
+      "required": false,
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "pattern_files_glob": {
+      "type": "string",
+      "description": "Specifies which pattern files to use from the directories specified for <code>patterns_directories</code>. Default is <code>*</code>.",
+      "required": false,
+      "default": "*"
+    },
+    "timeout_millis": {
+      "type": "integer",
+      "description": "The maximum amount of time during which matching occurs. Setting to <code>0</code> prevents any matching from occurring. Default is <code>30,000</code>.",
+      "required": false,
+      "default": 30000
+    },
+    "tags_on_match_failure": {
+      "type": "array",
+      "description": "A <code>List</code> of <code>String</code>s that specifies the tags to be set in the event when grok fails to match or an unknown exception occurs while matching. This tag may be used in conditional expressions in other parts of the configuration.",
+      "required": false,
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        {
+          "description": "Events are tagged with this string when matching fails or an unknown exception occurs.",
+          "example": "_match_failure"
+        }
+      ]
+    },
+    "tags_on_timeout": {
+      "type": "array",
+      "description": "The tags to add to the event metadata if the grok match times out.",
+      "required": false,
+      "items": {
+        "type": "string"
+      }
+    },
+    "performance_metadata": {
+      "type": "boolean",
+      "description": "A boolean value to determine whether to include performance metadata into event metadata. If set to true, the events coming out of grok will have new fields such as <code>_total_grok_patterns_attempted</code> and <code>_total_grok_processing_time</code>. You can use this metadata to perform performance testing and tuning of your grok patterns. By default, it is not included.",
+      "required": false,
+      "default": false
+    },
+    "grok_when": {
+      "type": "string",
+      "description": "A <a href=\"https://opensearch.org/docs/latest/data-prepper/pipelines/expression-syntax/\">conditional expression</a> such as <code>/test != false</code>. If specified, the <code>grok</code> processor will only run on events when the expression evaluates to true.",
+      "required": false,
+      "examples": [
+        {
+          "description": "When the IP type is IPV4, the processor will perform matching.",
+          "example": "/type == \"ipv4\""
+        }
+      ]
+    }
+  }
+}

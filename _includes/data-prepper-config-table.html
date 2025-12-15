@@ -1,0 +1,153 @@
+{% comment %}
+Data Prepper Configuration Table Generator
+Usage: {% include data-prepper-config-table.html plugin="plugin-name" plugin_type="processor" %}
+{% endcomment %}
+
+{% assign plugin_name = include.plugin %}
+{% assign plugin_type = include.plugin_type | default: "processor" %}
+
+{% comment %} Determine which data collection to use based on plugin_type {% endcomment %}
+{% case plugin_type %}
+  {% when "processor" %}
+    {% assign plugin_data = site.data.data-prepper.processors[plugin_name] %}
+  {% when "source" %}
+    {% assign plugin_data = site.data.data-prepper.sources[plugin_name] %}
+  {% when "sink" %}
+    {% assign plugin_data = site.data.data-prepper.sinks[plugin_name] %}
+  {% when "buffer" %}
+    {% assign plugin_data = site.data.data-prepper.buffers[plugin_name] %}
+  {% else %}
+    {% assign plugin_data = site.data.data-prepper.processors[plugin_name] %}
+{% endcase %}
+
+{% if plugin_data %}
+  {% comment %} Validate that plugin_data has required structure {% endcomment %}
+  {% unless plugin_data.properties %}
+    <div class="alert alert-warning">
+      <strong>Configuration Error:</strong> No properties found for {{ plugin_name }} {{ plugin_type }}. 
+      Please check the JSON file at <code>_data/data-prepper/{{ plugin_type }}s/{{ plugin_name }}.json</code>.
+    </div>
+  {% else %}
+
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Required</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+{% for property in plugin_data.properties -%}
+{% assign prop_name = property[0] -%}
+{% assign prop_config = property[1] -%}
+{% assign required_text = "No" -%}
+{% if prop_config.required == true -%}
+{% assign required_text = "Yes" -%}
+{% endif -%}
+{% assign type_display = prop_config.type | capitalize -%}
+{% comment %} Handle array types with items specification {% endcomment %}
+{% if prop_config.type == "array" and prop_config.items.type -%}
+{% assign type_display = "List" -%}
+{% endif -%}
+{% comment %} Handle object types {% endcomment %}
+{% if prop_config.type == "object" -%}
+{% assign type_display = "Map" -%}
+{% endif -%}
+{% comment %} Build description with proper default value handling {% endcomment %}
+{% assign description = prop_config.description | strip -%}
+{% if prop_config.default != null -%}
+  {% assign default_size = prop_config.default | size -%}
+  {% if prop_config.type == "array" and default_size == 0 -%}
+    {% assign description = description | append: " Default is an empty list." -%}
+  {% elsif prop_config.type == "object" and default_size == 0 -%}
+    {% assign description = description | append: " Default is an empty object." -%}
+  {% elsif prop_config.default == "" -%}
+    {% assign description = description | append: " Default is an empty string." -%}
+  {% else -%}
+    {% assign description = description | append: " Default is `" | append: prop_config.default | append: "`." -%}
+  {% endif -%}
+{% endif -%}
+{% if prop_config.examples.size > 0 -%}
+  {% assign description = description | append: " " | append: prop_config.examples[0].description | strip -%}
+{% endif -%}
+<tr>
+<td><code>{{ prop_name }}</code></td>
+<td>{{ required_text }}</td>
+<td>{{ type_display }}</td>
+<td>{{ description }}</td>
+</tr>
+{% endfor -%}
+</tbody>
+</table>
+
+{% comment %} Generate separate tables for nested object properties {% endcomment %}
+{% for property in plugin_data.properties -%}
+{% assign prop_name = property[0] -%}
+{% assign prop_config = property[1] -%}
+{% if prop_config.properties and prop_config.properties.size > 0 -%}
+
+### {{ prop_name | replace: "_", " " | capitalize }} {#{{ prop_name | downcase }}}
+
+The following table describes the options for the `{{ prop_name }}` configuration.
+
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Required</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+{% for nested_property in prop_config.properties -%}
+{% assign nested_prop_name = nested_property[0] -%}
+{% assign nested_prop_config = nested_property[1] -%}
+{% assign nested_required_text = "No" -%}
+{% if nested_prop_config.required == true -%}
+{% assign nested_required_text = "Yes" -%}
+{% endif -%}
+{% assign nested_type_display = nested_prop_config.type | capitalize -%}
+{% if nested_prop_config.type == "array" and nested_prop_config.items.type -%}
+{% assign nested_type_display = "List" -%}
+{% endif -%}
+{% if nested_prop_config.type == "object" -%}
+{% assign nested_type_display = "Map" -%}
+{% endif -%}
+{% comment %} Build nested description with proper default value handling {% endcomment %}
+{% assign nested_description = nested_prop_config.description | strip -%}
+{% if nested_prop_config.default != null -%}
+  {% assign nested_default_size = nested_prop_config.default | size -%}
+  {% if nested_prop_config.type == "array" and nested_default_size == 0 -%}
+    {% assign nested_description = nested_description | append: " Default is an empty list." -%}
+  {% elsif nested_prop_config.type == "object" and nested_default_size == 0 -%}
+    {% assign nested_description = nested_description | append: " Default is an empty object." -%}
+  {% elsif nested_prop_config.default == "" -%}
+    {% assign nested_description = nested_description | append: " Default is an empty string." -%}
+  {% else -%}
+    {% assign nested_description = nested_description | append: " Default is `" | append: nested_prop_config.default | append: "`." -%}
+  {% endif -%}
+{% endif -%}
+<tr>
+<td><code>{{ nested_prop_name }}</code></td>
+<td>{{ nested_required_text }}</td>
+<td>{{ nested_type_display }}</td>
+<td>{{ nested_description }}</td>
+</tr>
+{% endfor -%}
+</tbody>
+</table>
+{% endif -%}
+{% endfor %}
+  {% endunless %}
+{% else %}
+  <div class="alert alert-danger">
+    <strong>Configuration Error:</strong> Plugin data not found for <code>{{ plugin_name }}</code> in {{ plugin_type }}s. 
+    <br>
+    Expected file: <code>_data/data-prepper/{{ plugin_type }}s/{{ plugin_name }}.json</code>
+    <br>
+    Please ensure the JSON file exists and contains valid plugin configuration data.
+  </div>
+{% endif %}

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opensearch.org/schemas/data-prepper-plugin-documentation.json",
+  "title": "Data Prepper Plugin Documentation Schema",
+  "description": "Schema for Data Prepper plugin configuration reference documentation",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Plugin name (must match the plugin identifier)",
+      "pattern": "^[a-z][a-z0-9_-]*$"
+    },
+    "plugin_type": {
+      "type": "string",
+      "description": "Type of Data Prepper plugin",
+      "enum": ["source", "processor", "sink", "buffer"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of what the plugin does"
+    },
+    "properties": {
+      "type": "object",
+      "description": "Configuration properties for the plugin",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9_]*$": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Data type of the configuration property",
+              "enum": ["string", "boolean", "integer", "number", "array", "object"]
+            },
+            "description": {
+              "type": "string",
+              "description": "HTML-formatted description of the configuration option"
+            },
+            "required": {
+              "type": "boolean",
+              "description": "Whether this property is required",
+              "default": false
+            },
+            "default": {
+              "description": "Default value for the property (can be any type)"
+            },
+            "examples": {
+              "type": "array",
+              "description": "Example values for the property",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "description": {
+                    "type": "string",
+                    "description": "Description of the example"
+                  },
+                  "example": {
+                    "description": "The example value (can be any type)"
+                  }
+                },
+                "required": ["description", "example"]
+              }
+            },
+            "items": {
+              "type": "object",
+              "description": "Schema for array items (when type is 'array')",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["string", "boolean", "integer", "number", "object"]
+                }
+              }
+            },
+            "properties": {
+              "type": "object",
+              "description": "Nested properties for complex types (when type is 'object')",
+              "patternProperties": {
+                "^[a-zA-Z][a-zA-Z0-9_]*$": {
+                  "$ref": "#/properties/properties/patternProperties/^[a-zA-Z][a-zA-Z0-9_]*$"
+                }
+              }
+            }
+          },
+          "required": ["type", "description"],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["name", "plugin_type", "properties"],
+  "additionalProperties": false
+}

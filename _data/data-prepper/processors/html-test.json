@@ -1,0 +1,42 @@
+{
+  "name": "html-test",
+  "plugin_type": "processor",
+  "description": "A test processor for HTML content preservation validation.",
+  "properties": {
+    "simple_html": {
+      "type": "string",
+      "description": "This property supports <code>inline code</code> and <em>emphasis</em> formatting.",
+      "required": false
+    },
+    "complex_html": {
+      "type": "string",
+      "description": "This property includes <a href=\"https://example.com\">links</a>, <strong>bold text</strong>, and <code>code blocks</code>. It also supports <ul><li>list items</li><li>multiple items</li></ul>.",
+      "required": true
+    },
+    "code_examples": {
+      "type": "object",
+      "description": "Configuration with <code>code</code> examples and <pre>preformatted text</pre>.",
+      "required": false,
+      "properties": {
+        "nested_html": {
+          "type": "string",
+          "description": "Nested property with <code>HTML</code> content including <a href=\"/docs/reference\">internal links</a>.",
+          "required": false
+        }
+      }
+    },
+    "special_chars": {
+      "type": "string",
+      "description": "Property with special characters: &lt;, &gt;, &amp;, and &quot;quotes&quot;.",
+      "required": false
+    },
+    "markdown_like": {
+      "type": "array",
+      "description": "This looks like markdown but is actually HTML: <code>**not bold**</code> vs <strong>actually bold</strong>.",
+      "required": false,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

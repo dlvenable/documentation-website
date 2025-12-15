@@ -1,0 +1,83 @@
+{
+  "name": "grok",
+  "plugin_type": "processor",
+  "properties": {
+    "match": {
+      "type": "object",
+      "required": false
+    },
+    "target_key": {
+      "type": "string",
+      "required": false,
+      "default": null
+    },
+    "break_on_match": {
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    "keep_empty_captures": {
+      "type": "boolean",
+      "required": false,
+      "default": false
+    },
+    "named_captures_only": {
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    "keys_to_overwrite": {
+      "type": "array",
+      "required": false,
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "pattern_definitions": {
+      "type": "object",
+      "required": false
+    },
+    "patterns_directories": {
+      "type": "array",
+      "required": false,
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "pattern_files_glob": {
+      "type": "string",
+      "required": false,
+      "default": "*"
+    },
+    "timeout_millis": {
+      "type": "integer",
+      "required": false,
+      "default": 30000
+    },
+    "tags_on_match_failure": {
+      "type": "array",
+      "required": false,
+      "items": {
+        "type": "string"
+      }
+    },
+    "tags_on_timeout": {
+      "type": "array",
+      "required": false,
+      "items": {
+        "type": "string"
+      }
+    },
+    "performance_metadata": {
+      "type": "boolean",
+      "required": false,
+      "default": false
+    },
+    "grok_when": {
+      "type": "string",
+      "required": false
+    }
+  }
+}

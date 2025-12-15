@@ -346,7 +346,11 @@ layout: table_wrappers
 
   {% if site.anchor_links != nil %}
     <script>
-      anchors.add().remove('.subfooter h1, .subfooter h2');
+      anchors.options = {
+        placement: 'left',
+        truncate: 64
+      };
+      anchors.add('h1, h2, h3, h4, h5, h6').remove('.subfooter h1, .subfooter h2');
     </script>
   {% endif %}
   {% if site.search_enabled == false and site.use_custom_search == true %}

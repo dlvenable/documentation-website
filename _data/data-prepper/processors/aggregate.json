@@ -1,0 +1,27 @@
+{
+  "name": "aggregate",
+  "plugin_type": "processor",
+  "description": "The aggregate processor groups events based on the values of identification_keys and performs a configurable action on each group.",
+  "properties": {
+    "identification_keys": {
+      "type": "array",
+      "description": "An unordered list by which to group events. Events with the same values as these keys are put into the same group. If an event does not contain one of the <code>identification_keys</code>, then the value of that key is considered to be equal to <code>null</code>. At least one identification_key is required (for example, <code>[\"sourceIp\", \"destinationIp\", \"port\"]</code>).",
+      "required": true
+    },
+    "action": {
+      "type": "object",
+      "description": "The action to be performed on each group. One of the <a href=\"#available-aggregate-actions\">available aggregate actions</a> must be provided, or you can create custom aggregate actions. <code>remove_duplicates</code> and <code>put_all</code> are the available actions. For more information, see <a href=\"https://github.com/opensearch-project/data-prepper/tree/main/data-prepper-plugins/aggregate-processor#creating-new-aggregate-actions\">Creating New Aggregate Actions</a>.",
+      "required": true
+    },
+    "group_duration": {
+      "type": "string",
+      "description": "The amount of time that a group should exist before it is concluded automatically. Supports ISO_8601 notation strings (\"PT20.345S\", \"PT15M\", etc.) as well as simple notation for seconds (<code>\"60s\"</code>) and milliseconds (<code>\"1500ms\"</code>). Default value is <code>180s</code>.",
+      "required": false
+    },
+    "local_mode": {
+      "type": "boolean",
+      "description": "When <code>local_mode</code> is set to <code>true</code>, the aggregation is performed locally on each OpenSearch Data Prepper node instead of forwarding events to a specific node based on the <code>identification_keys</code> using a hash function. Default is <code>false</code>.",
+      "required": false
+    }
+  }
+}

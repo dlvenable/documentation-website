@@ -1,0 +1,35 @@
+{
+  "name": "html-test",
+  "plugin_type": "processor",
+  "properties": {
+    "simple_html": {
+      "type": "string",
+      "required": false
+    },
+    "complex_html": {
+      "type": "string",
+      "required": true
+    },
+    "code_examples": {
+      "type": "object",
+      "required": false,
+      "properties": {
+        "nested_html": {
+          "type": "string",
+          "required": false
+        }
+      }
+    },
+    "special_chars": {
+      "type": "string",
+      "required": false
+    },
+    "markdown_like": {
+      "type": "array",
+      "required": false,
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

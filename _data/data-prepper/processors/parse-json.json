@@ -1,0 +1,47 @@
+{
+  "name": "parse-json",
+  "plugin_type": "processor",
+  "description": "The parse-json processor parses JSON data from event fields into structured data.",
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "The field in the event that will be parsed. Default is <code>message</code>.",
+      "required": false
+    },
+    "destination": {
+      "type": "string",
+      "description": "The destination field for the parsed JSON. Default is the root of the event. Cannot be <code>\"\"</code>, <code>/</code>, or any white-space-only string.",
+      "required": false
+    },
+    "pointer": {
+      "type": "string",
+      "description": "A JSON pointer (as defined by <a href=\"https://datatracker.ietf.org/doc/html/rfc6901\">RFC 6901</a>) to a specific field in the source JSON. If omitted, the entire <code>source</code> is parsed. If the pointer is invalid, the full <code>source</code> is parsed instead. When writing to the root destination, existing keys will be preserved unless overwritten.",
+      "required": false
+    },
+    "parse_when": {
+      "type": "string",
+      "description": "A condition expression that determines when to parse the field. Accepts a string following the <a href=\"{{site.url}}{{site.baseurl}}/data-prepper/pipelines/expression-syntax/\">expression syntax</a>.",
+      "required": false
+    },
+    "overwrite_if_destination_exists": {
+      "type": "boolean",
+      "description": "Whether to overwrite the destination field if it already exists. Default is <code>true</code>.",
+      "required": false
+    },
+    "delete_source": {
+      "type": "boolean",
+      "description": "Whether to delete the source field after parsing. Default is <code>false</code>.",
+      "required": false
+    },
+    "tags_on_failure": {
+      "type": "array",
+      "description": "A list of tags to apply if parsing fails or an unexpected exception occurs.",
+      "required": false
+    },
+    "handle_failed_events": {
+      "type": "string",
+      "description": "Determines how to handle events containing JSON processing errors. Valid values are <code>skip</code> (log the error and send the event downstream to the next processor) and <code>skip_silently</code> (send the event downstream to the next processor without logging the error).",
+      "required": false
+    }
+  }
+}

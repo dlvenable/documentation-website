@@ -1,0 +1,39 @@
+{
+  "name": "opensearch",
+  "plugin_type": "sink",
+  "properties": {
+    "hosts": {
+      "type": "array",
+      "required": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "username": {
+      "type": "string",
+      "required": false
+    },
+    "password": {
+      "type": "string",
+      "required": false
+    },
+    "index": {
+      "type": "string",
+      "required": true
+    },
+    "template": {
+      "type": "object",
+      "required": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "required": false
+        },
+        "file": {
+          "type": "string",
+          "required": false
+        }
+      }
+    }
+  }
+}

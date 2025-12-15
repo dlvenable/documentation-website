@@ -1,0 +1,37 @@
+{
+  "name": "csv",
+  "plugin_type": "processor",
+  "description": "The CSV processor parses comma-separated values from event data into individual fields.",
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "The field in the event that will be parsed. Default value is <code>message</code>.",
+      "required": false
+    },
+    "quote_character": {
+      "type": "string",
+      "description": "The character used as a text qualifier for a single column of data. Default value is <code>\"</code>.",
+      "required": false
+    },
+    "delimiter": {
+      "type": "string",
+      "description": "The character separating each column. Default value is <code>,</code>.",
+      "required": false
+    },
+    "delete_header": {
+      "type": "boolean",
+      "description": "If specified, the event header (<code>column_names_source_key</code>) is deleted after the event is parsed. If there is no event header, no action is taken. Default value is true.",
+      "required": false
+    },
+    "column_names_source_key": {
+      "type": "string",
+      "description": "The field in the event that specifies the CSV column names, which will be automatically detected. If there need to be extra column names, the column names are automatically generated according to their index. If <code>column_names</code> is also defined, the header in <code>column_names_source_key</code> can also be used to generate the event fields. If too few columns are specified in this field, the remaining column names are automatically generated. If too many column names are specified in this field, the CSV processor omits the extra column names.",
+      "required": false
+    },
+    "column_names": {
+      "type": "array",
+      "description": "User-specified names for the CSV columns. Default value is <code>[column1, column2, ..., columnN]</code> if there are no columns of data in the CSV record and <code>column_names_source_key</code> is not defined. If <code>column_names_source_key</code> is defined, the header in <code>column_names_source_key</code> generates the event fields. If too few columns are specified in this field, the remaining column names are automatically generated. If too many column names are specified in this field, the CSV processor omits the extra column names.",
+      "required": false
+    }
+  }
+}

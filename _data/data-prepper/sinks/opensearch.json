@@ -1,0 +1,67 @@
+{
+  "name": "opensearch",
+  "plugin_type": "sink",
+  "description": "The opensearch sink sends data to an OpenSearch cluster.",
+  "properties": {
+    "hosts": {
+      "type": "array",
+      "description": "List of OpenSearch hosts to write to.",
+      "required": true,
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        {
+          "description": "Single host configuration",
+          "example": "[\"https://localhost:9200\"]"
+        },
+        {
+          "description": "Multiple hosts for high availability",
+          "example": "[\"https://node1:9200\", \"https://node2:9200\", \"https://node3:9200\"]"
+        }
+      ]
+    },
+    "username": {
+      "type": "string",
+      "description": "Username for basic authentication to OpenSearch.",
+      "required": false
+    },
+    "password": {
+      "type": "string",
+      "description": "Password for basic authentication to OpenSearch.",
+      "required": false
+    },
+    "index": {
+      "type": "string",
+      "description": "Name of the index to write documents to. Can include date patterns.",
+      "required": true,
+      "examples": [
+        {
+          "description": "Static index name",
+          "example": "application-logs"
+        },
+        {
+          "description": "Date-based index pattern",
+          "example": "logs-%{yyyy.MM.dd}"
+        }
+      ]
+    },
+    "template": {
+      "type": "object",
+      "description": "Index template configuration for managing index settings and mappings.",
+      "required": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the index template.",
+          "required": false
+        },
+        "file": {
+          "type": "string",
+          "description": "Path to a JSON file containing the index template.",
+          "required": false
+        }
+      }
+    }
+  }
+}
