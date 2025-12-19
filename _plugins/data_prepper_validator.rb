@@ -54,7 +54,35 @@ module DataPrepperValidator
     end
 
     def validate_json_structure(data, file_path)
-      # Validate required top-level fields
+      # Check if this is a JSON Schema format (has $schema field)
+      if data.key?('$schema')
+        validate_json_schema_structure(data, file_path)
+      else
+        validate_legacy_structure(data, file_path)
+      end
+    end
+
+    def validate_json_schema_structure(data, file_path)
+      # For JSON Schema format, validate required top-level fields
+      required_fields = %w[name properties]
+      required_fields.each do |field|
+        unless data.key?(field)
+          @errors << "Missing required field '#{field}' in #{file_path}"
+        end
+      end
+
+      # For JSON Schema files, we're much more lenient
+      # We just validate that properties is a hash if it exists
+      if data['properties'] && !data['properties'].is_a?(Hash)
+        @errors << "Field 'properties' must be an object in #{file_path}"
+      end
+
+      # No detailed property validation for JSON Schema files
+      # The schema itself is the validation
+    end
+
+    def validate_legacy_structure(data, file_path)
+      # Validate required top-level fields for legacy format
       required_fields = %w[name description properties]
       required_fields.each do |field|
         unless data.key?(field)
@@ -75,13 +103,31 @@ module DataPrepperValidator
       end
     end
 
+
+
     def validate_property_structure(prop_config, prop_name, file_path)
       unless prop_config.is_a?(Hash)
         @errors << "Property '#{prop_name}' must be an object in #{file_path}"
         return
       end
 
-      # Validate required property fields
+      # Check if this is a JSON Schema reference
+      if prop_config.key?('$ref')
+        # For $ref properties, we don't require 'type' field or 'description'
+        return
+      end
+
+      # Check for anyOf structure (JSON Schema)
+      if prop_config.key?('anyOf')
+        # anyOf structure - validate that it's an array
+        unless prop_config['anyOf'].is_a?(Array)
+          @errors << "Property '#{prop_name}' anyOf must be an array in #{file_path}"
+        end
+        return
+      end
+
+      # For legacy format, require type and description
+      # For JSON Schema format, these are optional
       unless prop_config.key?('type')
         @errors << "Property '#{prop_name}' missing required 'type' field in #{file_path}"
       end
@@ -91,7 +137,7 @@ module DataPrepperValidator
       end
 
       # Validate type values
-      valid_types = %w[string integer boolean array object]
+      valid_types = %w[string integer number boolean array object]
       if prop_config['type'] && !valid_types.include?(prop_config['type'])
         @warnings << "Property '#{prop_name}' has unknown type '#{prop_config['type']}' in #{file_path}"
       end

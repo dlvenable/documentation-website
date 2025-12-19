@@ -1,35 +1,105 @@
 {
-  "name": "http",
-  "plugin_type": "source",
-  "description": "The http source accepts HTTP requests on a configurable port and converts them into Data Prepper events.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ByteCount": {
+      "type": "object",
+      "properties": {
+        "bytes": {
+          "type": "integer"
+        }
+      }
+    },
+    "CompressionOption": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "GZIP",
+        "SNAPPY",
+        "ZSTD",
+        "AUTOMATIC"
+      ]
+    },
+    "PluginModel": {
+      "type": "object",
+      "properties": {
+        "plugin_name": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "type": "object",
   "properties": {
-    "port": {
+    "acm_certificate_arn": {
+      "type": "string"
+    },
+    "acm_certificate_timeout_millis": {
       "type": "integer",
-      "description": "The port number on which the HTTP source runs. Default is <code>2021</code>.",
-      "required": false,
-      "default": 2021
+      "minimum": 0
+    },
+    "acm_private_key_password": {
+      "type": "string"
+    },
+    "authentication": {
+      "$ref": "#/$defs/PluginModel"
+    },
+    "aws_region": {
+      "type": "string"
+    },
+    "codec": {
+      "$ref": "#/$defs/PluginModel"
+    },
+    "compression": {
+      "$ref": "#/$defs/CompressionOption"
+    },
+    "health_check_service": {
+      "type": "boolean"
+    },
+    "max_connection_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "max_pending_requests": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "max_request_length": {
+      "$ref": "#/$defs/ByteCount"
     },
     "path": {
       "type": "string",
-      "description": "The HTTP path on which the source receives requests. Default is <code>/log/ingest</code>.",
-      "required": false,
-      "default": "/log/ingest"
+      "minLength": 1
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "request_timeout": {
+      "type": "integer",
+      "minimum": 2
     },
     "ssl": {
-      "type": "boolean",
-      "description": "Enables SSL/TLS encryption. When enabled, requires SSL certificate configuration.",
-      "required": false,
-      "default": false
+      "type": "boolean"
     },
     "ssl_certificate_file": {
-      "type": "string",
-      "description": "Path to the SSL certificate file. Required when <code>ssl</code> is <code>true</code>.",
-      "required": false
+      "type": "string"
     },
     "ssl_key_file": {
-      "type": "string", 
-      "description": "Path to the SSL private key file. Required when <code>ssl</code> is <code>true</code>.",
-      "required": false
+      "type": "string"
+    },
+    "thread_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "unauthenticated_health_check": {
+      "type": "boolean"
+    },
+    "use_acm_certificate_for_ssl": {
+      "type": "boolean"
     }
-  }
+  },
+  "name": "http",
+  "primary_fields": [],
+  "documentation": "https://opensearch.org/docs/latest/data-prepper/pipelines/configuration/sources/http/"
 }

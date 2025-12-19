@@ -1,27 +1,354 @@
 {
-  "name": "aggregate",
-  "plugin_type": "processor",
-  "description": "The aggregate processor groups events based on the values of identification_keys and performs a configurable action on each group.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "AppendAggregateAction": {
+      "type": "object",
+      "properties": {
+        "append": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "keys_to_append": {
+              "description": "A list of keys to append to for the aggregated result.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Appends multiple events into a single event."
+        }
+      }
+    },
+    "CountAggregateAction": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$defs": {
+            "OutputFormat": {
+              "type": "string",
+              "enum": [
+                "otel_metrics",
+                "raw"
+              ]
+            }
+          },
+          "type": "object",
+          "properties": {
+            "output_format": {
+              "$ref": "#/$defs/OutputFormat",
+              "description": "Format of the aggregated event. Specifying <code>otel_metrics</code> outputs aggregate events in OTel metrics SUM type with count as value. Specifying <code>raw</code> outputs aggregate events as with the <code>count_key</code> field as a count value and includes the <code>start_time_key</code> and <code>end_time_key</code> keys.",
+              "default": "otel_metrics"
+            },
+            "metric_name": {
+              "type": "string",
+              "description": "Metric name to be used when the OTel metrics format is used. The default value is <code>count</code>.",
+              "default": "count"
+            },
+            "count_key": {
+              "type": "string",
+              "description": "The key in the aggregate event that will have the count value. This is the count of events in the aggregation. Default name is <code>aggr._count</code>.",
+              "default": "aggr._count"
+            },
+            "start_time_key": {
+              "type": "string",
+              "description": "The key in the aggregate event that will have the start time of the aggregation. Default name is <code>aggr._start_time</code>.",
+              "default": "aggr._start_time"
+            },
+            "end_time_key": {
+              "type": "string",
+              "description": "The key in the aggregate event that will have the end time of the aggregation. Default name is <code>aggr._end_time</code>.",
+              "default": "aggr._end_time"
+            },
+            "unique_keys": {
+              "description": "List of unique keys to count.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "The <code>count</code> action counts events that belong to the same group and generates a new event with values of the <code>identification_keys</code> and the count, which indicates the number of new events."
+        }
+      }
+    },
+    "HistogramAggregateAction": {
+      "type": "object",
+      "properties": {
+        "histogram": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$defs": {
+            "OutputFormat": {
+              "type": "string",
+              "enum": [
+                "otel_metrics",
+                "raw"
+              ]
+            }
+          },
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Name of the field in the events the histogram generates."
+            },
+            "output_format": {
+              "$ref": "#/$defs/OutputFormat",
+              "description": "Format of the aggregated event. otel_metrics is the default output format which outputs in OTel metrics SUM type with count as value. Other options is - raw - which generates a JSON object with the count_key field as a count value and the start_time_key field with aggregation start time as value.",
+              "default": "otel_metrics"
+            },
+            "units": {
+              "type": "string",
+              "description": "The name of units for the values in the key. For example, bytes, traces etc"
+            },
+            "metric_name": {
+              "type": "string",
+              "description": "Metric name to be used when otel format is used.",
+              "default": "histogram"
+            },
+            "generated_key_prefix": {
+              "type": "string",
+              "description": "Key prefix used by all the fields created in the aggregated event. Having a prefix ensures that the names of the histogram event do not conflict with the field names in the event.",
+              "default": "aggr._"
+            },
+            "buckets": {
+              "description": "A list of buckets (values of type double) indicating the buckets in the histogram.",
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "record_minmax": {
+              "type": "boolean",
+              "description": "A Boolean value indicating whether the histogram should include the min and max of the values in the aggregation."
+            }
+          },
+          "required": [
+            "key",
+            "units",
+            "buckets"
+          ],
+          "description": "The <code>histogram</code> action aggregates events belonging to the same group and generates a new event with values of the <code>identification_keys</code> and histogram of the aggregated events based on a configured <code>key</code>. The histogram contains the number of events, sum, buckets, bucket counts, and optionally min and max of the values corresponding to the <code>key</code>. The action drops all events that make up the combined event."
+        }
+      }
+    },
+    "OutputFormat": {
+      "type": "string",
+      "enum": [
+        "otel_metrics",
+        "raw"
+      ]
+    },
+    "PercentSamplerAggregateAction": {
+      "type": "object",
+      "properties": {
+        "percent_sampler": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "percent": {
+              "type": "number",
+              "description": "The percentage of events to be processed during a one second interval. Must be greater than 0.0 and less than 100.0."
+            }
+          },
+          "required": [
+            "percent"
+          ],
+          "description": "The <code>percent_sampler</code> action controls the number of events aggregated based on a percentage of events. The action drops any events not included in the percentage."
+        }
+      }
+    },
+    "PutAllAggregateAction": {
+      "type": "object",
+      "properties": {
+        "put_all": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "description": "The <code>put_all</code> action combines events belonging to the same group by overwriting existing keys and adding new keys, similarly to the Java `Map.putAll`. The action drops all events that make up the combined event."
+        }
+      }
+    },
+    "RateLimiterAggregateAction": {
+      "type": "object",
+      "properties": {
+        "rate_limiter": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$defs": {
+            "RateLimiterMode": {
+              "type": "string",
+              "enum": [
+                "drop",
+                "block"
+              ]
+            }
+          },
+          "type": "object",
+          "properties": {
+            "events_per_second": {
+              "type": "integer",
+              "description": "The number of events allowed per second."
+            },
+            "when_exceeds": {
+              "$ref": "#/$defs/RateLimiterMode",
+              "description": "Indicates what action the <code>rate_limiter</code> takes when the number of events received is greater than the number of events allowed per second. Default value is block, which blocks the processor from running after the maximum number of events allowed per second is reached until the next second. Alternatively, the drop option drops the excess events received in that second. Default is block",
+              "default": "block"
+            }
+          },
+          "required": [
+            "events_per_second"
+          ],
+          "description": "The <code>rate_limiter</code> action controls the number of events aggregated per second. By default, <code>rate_limiter</code> blocks the <code>aggregate</code> processor from running if it receives more events than the configured number allowed. You can overwrite the number events that triggers the <code>rate_limited</code> by using the <code>when_exceeds</code> configuration option."
+        }
+      }
+    },
+    "RemoveDuplicatesAggregateAction": {
+      "type": "object",
+      "properties": {
+        "remove_duplicates": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "description": "The <code>remove_duplicates</code> action processes the first event for a group immediately and drops any events that duplicate the first event from the source."
+        }
+      }
+    },
+    "TailSamplerAggregateAction": {
+      "type": "object",
+      "properties": {
+        "tail_sampler": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "wait_period": {
+              "type": "string",
+              "format": "duration",
+              "description": "Period to wait before considering that a trace event is complete"
+            },
+            "percent": {
+              "type": "integer",
+              "description": "Percent value to use for sampling non error events. Must be greater than 0.0 and less than 100.0"
+            },
+            "condition": {
+              "type": "string",
+              "description": "A <a href=\"https://opensearch.org/docs/latest/data-prepper/pipelines/expression-syntax/\">conditional expression</a>, such as '/some-key == \"test\"', that will be evaluated to determine whether the event is an error event or not"
+            }
+          },
+          "required": [
+            "wait_period",
+            "percent"
+          ],
+          "description": "The <code>tail_sampler</code> action samples OpenTelemetry traces after collecting spans for a trace."
+        }
+      }
+    }
+  },
+  "type": "object",
   "properties": {
     "identification_keys": {
+      "description": "An unordered list by which to group events. Events with the same values as these keys are put into the same group. If an event does not contain one of the <code>identification_keys</code>, then the value of that key is considered to be equal to <code>null</code>. At least one <code>identification_key</code> is required.",
+      "minItems": 1,
+      "examples": [
+        {
+          "description": "Aggregate based on the values of a group_id key in the Events",
+          "example": "group_id"
+        }
+      ],
       "type": "array",
-      "description": "An unordered list by which to group events. Events with the same values as these keys are put into the same group. If an event does not contain one of the <code>identification_keys</code>, then the value of that key is considered to be equal to <code>null</code>. At least one identification_key is required (for example, <code>[\"sourceIp\", \"destinationIp\", \"port\"]</code>).",
-      "required": true
+      "items": {
+        "type": "string"
+      }
     },
     "action": {
-      "type": "object",
-      "description": "The action to be performed on each group. One of the <a href=\"#available-aggregate-actions\">available aggregate actions</a> must be provided, or you can create custom aggregate actions. <code>remove_duplicates</code> and <code>put_all</code> are the available actions. For more information, see <a href=\"https://github.com/opensearch-project/data-prepper/tree/main/data-prepper-plugins/aggregate-processor#creating-new-aggregate-actions\">Creating New Aggregate Actions</a>.",
-      "required": true
+      "anyOf": [
+        {
+          "$ref": "#/$defs/AppendAggregateAction",
+          "description": "The action to be performed on each group. One of the available aggregate actions must be provided."
+        },
+        {
+          "$ref": "#/$defs/PercentSamplerAggregateAction",
+          "description": "The action to be performed on each group. One of the available aggregate actions must be provided."
+        },
+        {
+          "$ref": "#/$defs/TailSamplerAggregateAction",
+          "description": "The action to be performed on each group. One of the available aggregate actions must be provided."
+        },
+        {
+          "$ref": "#/$defs/RateLimiterAggregateAction",
+          "description": "The action to be performed on each group. One of the available aggregate actions must be provided."
+        },
+        {
+          "$ref": "#/$defs/PutAllAggregateAction",
+          "description": "The action to be performed on each group. One of the available aggregate actions must be provided."
+        },
+        {
+          "$ref": "#/$defs/CountAggregateAction",
+          "description": "The action to be performed on each group. One of the available aggregate actions must be provided."
+        },
+        {
+          "$ref": "#/$defs/HistogramAggregateAction",
+          "description": "The action to be performed on each group. One of the available aggregate actions must be provided."
+        },
+        {
+          "$ref": "#/$defs/RemoveDuplicatesAggregateAction",
+          "description": "The action to be performed on each group. One of the available aggregate actions must be provided."
+        }
+      ]
     },
     "group_duration": {
       "type": "string",
-      "description": "The amount of time that a group should exist before it is concluded automatically. Supports ISO_8601 notation strings (\"PT20.345S\", \"PT15M\", etc.) as well as simple notation for seconds (<code>\"60s\"</code>) and milliseconds (<code>\"1500ms\"</code>). Default value is <code>180s</code>.",
-      "required": false
+      "format": "duration",
+      "description": "The amount of time that a group should exist before it is concluded automatically. Supports ISO_8601 notation strings (\"PT20.345S\", \"PT15M\", etc.) as well as simple notation for seconds (\"60s\") and milliseconds (\"1500ms\"). Default value is 180s.",
+      "default": "180s",
+      "examples": [
+        {
+          "description": "Aggregated groups will be flushed after 180 seconds",
+          "example": "180s"
+        },
+        {
+          "description": "Aggregated groups will be flushed after 1,000 milliseconds",
+          "example": "1000ms"
+        },
+        {
+          "description": "Aggregated groups will be flushed after 2 hours",
+          "example": "PT2H"
+        }
+      ]
     },
     "local_mode": {
       "type": "boolean",
-      "description": "When <code>local_mode</code> is set to <code>true</code>, the aggregation is performed locally on each OpenSearch Data Prepper node instead of forwarding events to a specific node based on the <code>identification_keys</code> using a hash function. Default is <code>false</code>.",
-      "required": false
+      "description": "When <code>local_mode</code> is set to true, the aggregation is performed locally on each node instead of forwarding events to a specific node based on the <code>identification_keys</code> using a hash function. Default is false."
+    },
+    "output_unaggregated_events": {
+      "type": "boolean",
+      "description": "A boolean indicating if the unaggregated events should be forwarded to the next processor or sink in the chain."
+    },
+    "aggregated_events_tag": {
+      "type": "string",
+      "description": "Tag to be used for aggregated events to distinguish aggregated events from unaggregated events."
+    },
+    "aggregate_when": {
+      "type": "string",
+      "description": "A <a href=\"https://opensearch.org/docs/latest/data-prepper/pipelines/expression-syntax/\">conditional expression</a>, such as <code>/some-key == \"test\"</code>, that will be evaluated to determine whether the processor will be run on the event.",
+      "examples": [
+        {
+          "description": "Only includes events in the aggregations if the key some_key is null or does not exist.",
+          "example": "/some_key == null"
+        }
+      ]
     }
-  }
+  },
+  "required": [
+    "identification_keys",
+    "action",
+    "local_mode"
+  ],
+  "dependentRequired": {
+    "output_unaggregated_events": [
+      "aggregated_events_tag"
+    ]
+  },
+  "description": "The <code>aggregate</code> processor groups events based on the values of identification_keys. Then, the processor performs an action on each group, helping reduce unnecessary log volume and creating aggregated logs over time.",
+  "name": "aggregate",
+  "primary_fields": [],
+  "documentation": "https://opensearch.org/docs/latest/data-prepper/pipelines/configuration/processors/aggregate/"
 }

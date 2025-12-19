@@ -1,67 +1,318 @@
 {
-  "name": "opensearch",
-  "plugin_type": "sink",
-  "description": "The opensearch sink sends data to an OpenSearch cluster.",
-  "properties": {
-    "hosts": {
-      "type": "array",
-      "description": "List of OpenSearch hosts to write to.",
-      "required": true,
-      "items": {
-        "type": "string"
-      },
-      "examples": [
-        {
-          "description": "Single host configuration",
-          "example": "[\"https://localhost:9200\"]"
-        },
-        {
-          "description": "Multiple hosts for high availability",
-          "example": "[\"https://node1:9200\", \"https://node2:9200\", \"https://node3:9200\"]"
-        }
-      ]
-    },
-    "username": {
-      "type": "string",
-      "description": "Username for basic authentication to OpenSearch.",
-      "required": false
-    },
-    "password": {
-      "type": "string",
-      "description": "Password for basic authentication to OpenSearch.",
-      "required": false
-    },
-    "index": {
-      "type": "string",
-      "description": "Name of the index to write documents to. Can include date patterns.",
-      "required": true,
-      "examples": [
-        {
-          "description": "Static index name",
-          "example": "application-logs"
-        },
-        {
-          "description": "Date-based index pattern",
-          "example": "logs-%{yyyy.MM.dd}"
-        }
-      ]
-    },
-    "template": {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ActionConfiguration": {
       "type": "object",
-      "description": "Index template configuration for managing index settings and mappings.",
-      "required": false,
       "properties": {
-        "name": {
+        "type": {
           "type": "string",
-          "description": "Name of the index template.",
-          "required": false
+          "minLength": 1
         },
-        "file": {
+        "when": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "AuthConfig": {
+      "type": "object",
+      "properties": {
+        "api_token": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      }
+    },
+    "AwsAuthenticationConfiguration": {
+      "type": "object",
+      "properties": {
+        "region": {
           "type": "string",
-          "description": "Path to a JSON file containing the index template.",
-          "required": false
+          "minLength": 1
+        },
+        "serverless": {
+          "type": "boolean"
+        },
+        "serverless_options": {
+          "$ref": "#/$defs/ServerlessOptions"
+        },
+        "sts_external_id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 1224
+        },
+        "sts_header_overrides": {
+          "type": "object",
+          "maxProperties": 5
+        },
+        "sts_role_arn": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 2048
+        }
+      }
+    },
+    "DlqConfiguration": {
+      "type": "object",
+      "properties": {
+        "s3": {
+          "$ref": "#/$defs/S3DlqWriterConfig"
+        }
+      }
+    },
+    "QueryForExistingDocumentConfiguration": {
+      "type": "object",
+      "properties": {
+        "async_limit": {
+          "type": "integer"
+        },
+        "query_duration": {
+          "type": "string",
+          "format": "duration"
+        },
+        "query_on_bulk_errors": {
+          "type": "boolean"
+        },
+        "query_term": {
+          "type": "string"
+        },
+        "query_when": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "query_term",
+        "query_when"
+      ]
+    },
+    "S3DlqWriterConfig": {
+      "type": "object",
+      "properties": {
+        "bucket": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 500
+        },
+        "bucket_owner": {
+          "type": "string"
+        },
+        "key_path_prefix": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "region": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sts_external_id": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 1224
+        },
+        "sts_header_overrides": {
+          "type": "object"
+        },
+        "sts_role_arn": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 2048
+        }
+      },
+      "required": [
+        "bucket"
+      ]
+    },
+    "ServerlessOptions": {
+      "type": "object",
+      "properties": {
+        "collection_name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32
+        },
+        "network_policy_name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 32
+        },
+        "vpce_id": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }
-  }
+  },
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ActionConfiguration"
+      }
+    },
+    "api_token": {
+      "type": "string"
+    },
+    "authentication": {
+      "$ref": "#/$defs/AuthConfig"
+    },
+    "aws": {
+      "$ref": "#/$defs/AwsAuthenticationConfiguration"
+    },
+    "aws_region": {
+      "type": "string",
+      "minLength": 1,
+      "deprecated": ""
+    },
+    "aws_sigv4": {
+      "type": "boolean",
+      "deprecated": ""
+    },
+    "aws_sts_external_id": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 1224,
+      "deprecated": ""
+    },
+    "aws_sts_header_overrides": {
+      "type": "object",
+      "maxProperties": 5,
+      "deprecated": ""
+    },
+    "aws_sts_role_arn": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 2048,
+      "deprecated": ""
+    },
+    "bulk_size": {
+      "type": "integer"
+    },
+    "cert": {
+      "type": "string"
+    },
+    "connect_timeout": {
+      "type": "integer"
+    },
+    "distribution_version": {
+      "type": "string"
+    },
+    "dlq": {
+      "$ref": "#/$defs/DlqConfiguration"
+    },
+    "dlq_file": {
+      "type": "string"
+    },
+    "document_id": {
+      "type": "string"
+    },
+    "document_id_field": {
+      "type": "string",
+      "deprecated": ""
+    },
+    "document_root_key": {
+      "type": "string"
+    },
+    "document_version": {
+      "type": "string"
+    },
+    "document_version_type": {
+      "type": "string"
+    },
+    "enable_request_compression": {
+      "type": "boolean"
+    },
+    "estimate_bulk_size_using_compression": {
+      "type": "boolean"
+    },
+    "flush_timeout": {
+      "type": "integer"
+    },
+    "hosts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "index": {
+      "type": "string"
+    },
+    "index_type": {
+      "type": "string"
+    },
+    "insecure": {
+      "type": "boolean"
+    },
+    "ism_policy_file": {
+      "type": "string"
+    },
+    "max_local_compressions_for_estimation": {
+      "type": "integer"
+    },
+    "max_retries": {
+      "type": "integer"
+    },
+    "normalize_index": {
+      "type": "boolean"
+    },
+    "number_of_replicas": {
+      "type": "integer"
+    },
+    "number_of_shards": {
+      "type": "integer"
+    },
+    "password": {
+      "type": "string"
+    },
+    "proxy": {
+      "type": "string"
+    },
+    "query_lookup": {
+      "$ref": "#/$defs/QueryForExistingDocumentConfiguration"
+    },
+    "routing": {
+      "type": "string"
+    },
+    "routing_field": {
+      "type": "string",
+      "deprecated": ""
+    },
+    "serverless": {
+      "type": "boolean",
+      "deprecated": ""
+    },
+    "serverless_options": {
+      "$ref": "#/$defs/ServerlessOptions",
+      "deprecated": ""
+    },
+    "socket_timeout": {
+      "type": "integer"
+    },
+    "template_content": {
+      "type": "string"
+    },
+    "template_file": {
+      "type": "string"
+    },
+    "template_type": {
+      "type": "string"
+    },
+    "username": {
+      "type": "string"
+    }
+  },
+  "name": "opensearch",
+  "primary_fields": [],
+  "documentation": "https://opensearch.org/docs/latest/data-prepper/pipelines/configuration/sinks/opensearch/"
 }

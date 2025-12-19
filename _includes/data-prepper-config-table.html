@@ -1,6 +1,6 @@
 {% comment %}
 Data Prepper Configuration Table Generator
-Usage: {% include data-prepper-config-table.html plugin="plugin-name" plugin_type="processor" %}
+Usage: {% include data-prepper-config-table.html plugin="[PLUGIN_NAME]" plugin_type="processor" %}
 {% endcomment %}
 
 {% assign plugin_name = include.plugin %}
@@ -51,9 +51,34 @@ Usage: {% include data-prepper-config-table.html plugin="plugin-name" plugin_typ
 {% if prop_config.type == "array" and prop_config.items.type -%}
 {% assign type_display = "List" -%}
 {% endif -%}
-{% comment %} Handle object types {% endcomment %}
-{% if prop_config.type == "object" -%}
-{% assign type_display = "Map" -%}
+{% comment %} Handle JSON Schema references {% endcomment %}
+{% if prop_config["$ref"] -%}
+  {% comment %} Direct reference: {"$ref": "#/$defs/TypeName"} {% endcomment %}
+  {% assign ref_parts = prop_config["$ref"] | split: "/" -%}
+  {% assign type_name = ref_parts.last -%}
+  {% comment %} Check if the referenced type has a title for display {% endcomment %}
+  {% assign display_name = type_name -%}
+  {% if plugin_data["$defs"][type_name]["title"] -%}
+    {% assign display_name = plugin_data["$defs"][type_name]["title"] -%}
+  {% endif -%}
+  {% assign type_display = '<a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
+{% elsif prop_config.type == "array" and prop_config.items["$ref"] -%}
+  {% comment %} Array of references: {"type": "array", "items": {"$ref": "#/$defs/TypeName"}} {% endcomment %}
+  {% assign ref_parts = prop_config.items["$ref"] | split: "/" -%}
+  {% assign type_name = ref_parts.last -%}
+  {% comment %} Check if the referenced type has a title for display {% endcomment %}
+  {% assign display_name = type_name -%}
+  {% if plugin_data["$defs"][type_name]["title"] -%}
+    {% assign display_name = plugin_data["$defs"][type_name]["title"] -%}
+  {% endif -%}
+  {% assign type_display = 'List of <a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
+{% elsif prop_config.type == "object" -%}
+  {% comment %} Generic object or object with nested properties {% endcomment %}
+  {% if prop_config.properties.size > 0 -%}
+    {% assign type_display = '<a href="#' | append: prop_name | downcase | append: '">' | append: prop_name | capitalize | append: '</a>' -%}
+  {% else -%}
+    {% assign type_display = "Object" -%}
+  {% endif -%}
 {% endif -%}
 {% comment %} Build description with proper default value handling {% endcomment %}
 {% assign description = prop_config.description | strip -%}
@@ -113,8 +138,29 @@ The following table describes the options for the `{{ prop_name }}` configuratio
 {% if nested_prop_config.type == "array" and nested_prop_config.items.type -%}
 {% assign nested_type_display = "List" -%}
 {% endif -%}
-{% if nested_prop_config.type == "object" -%}
-{% assign nested_type_display = "Map" -%}
+{% comment %} Handle JSON Schema references for nested properties {% endcomment %}
+{% if nested_prop_config["$ref"] -%}
+  {% assign ref_parts = nested_prop_config["$ref"] | split: "/" -%}
+  {% assign type_name = ref_parts.last -%}
+  {% assign display_name = type_name -%}
+  {% if plugin_data["$defs"][type_name]["title"] -%}
+    {% assign display_name = plugin_data["$defs"][type_name]["title"] -%}
+  {% endif -%}
+  {% assign nested_type_display = '<a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
+{% elsif nested_prop_config.type == "array" and nested_prop_config.items["$ref"] -%}
+  {% assign ref_parts = nested_prop_config.items["$ref"] | split: "/" -%}
+  {% assign type_name = ref_parts.last -%}
+  {% assign display_name = type_name -%}
+  {% if plugin_data["$defs"][type_name]["title"] -%}
+    {% assign display_name = plugin_data["$defs"][type_name]["title"] -%}
+  {% endif -%}
+  {% assign nested_type_display = 'List of <a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
+{% elsif nested_prop_config.type == "object" -%}
+  {% if nested_prop_config.properties.size > 0 -%}
+    {% assign nested_type_display = '<a href="#' | append: nested_prop_name | downcase | append: '">' | append: nested_prop_name | capitalize | append: '</a>' -%}
+  {% else -%}
+    {% assign nested_type_display = "Object" -%}
+  {% endif -%}
 {% endif -%}
 {% comment %} Build nested description with proper default value handling {% endcomment %}
 {% assign nested_description = nested_prop_config.description | strip -%}
@@ -141,6 +187,88 @@ The following table describes the options for the `{{ prop_name }}` configuratio
 </table>
 {% endif -%}
 {% endfor %}
+
+{% comment %} Generate tables for JSON Schema $defs types {% endcomment %}
+{% if plugin_data["$defs"] -%}
+{% for def_entry in plugin_data["$defs"] -%}
+{% assign def_name = def_entry[0] -%}
+{% assign def_config = def_entry[1] -%}
+{% if def_config.properties and def_config.properties.size > 0 -%}
+{% comment %} Use title if available, otherwise use the type name {% endcomment %}
+{% assign display_name = def_name -%}
+{% if def_config.title -%}
+  {% assign display_name = def_config.title -%}
+{% endif -%}
+
+### {{ display_name }} {#{{ def_name | downcase }}}
+
+The following table describes the options for the `{{ display_name }}` configuration.
+
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Required</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+{% for def_property in def_config.properties -%}
+{% assign def_prop_name = def_property[0] -%}
+{% assign def_prop_config = def_property[1] -%}
+{% assign def_required_text = "No" -%}
+{% if def_config.required contains def_prop_name -%}
+{% assign def_required_text = "Yes" -%}
+{% endif -%}
+{% assign def_type_display = def_prop_config.type | capitalize -%}
+{% if def_prop_config.type == "array" and def_prop_config.items.type -%}
+{% assign def_type_display = "List" -%}
+{% endif -%}
+{% comment %} Handle JSON Schema references in $defs {% endcomment %}
+{% if def_prop_config["$ref"] -%}
+  {% assign ref_parts = def_prop_config["$ref"] | split: "/" -%}
+  {% assign type_name = ref_parts.last -%}
+  {% assign display_name = type_name -%}
+  {% if plugin_data["$defs"][type_name]["title"] -%}
+    {% assign display_name = plugin_data["$defs"][type_name]["title"] -%}
+  {% endif -%}
+  {% assign def_type_display = '<a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
+{% elsif def_prop_config.type == "array" and def_prop_config.items["$ref"] -%}
+  {% assign ref_parts = def_prop_config.items["$ref"] | split: "/" -%}
+  {% assign type_name = ref_parts.last -%}
+  {% assign display_name = type_name -%}
+  {% if plugin_data["$defs"][type_name]["title"] -%}
+    {% assign display_name = plugin_data["$defs"][type_name]["title"] -%}
+  {% endif -%}
+  {% assign def_type_display = 'List of <a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
+{% endif -%}
+{% comment %} Build description with default value handling {% endcomment %}
+{% assign def_description = def_prop_config.description | strip -%}
+{% if def_prop_config.default != null -%}
+  {% assign def_default_size = def_prop_config.default | size -%}
+  {% if def_prop_config.type == "array" and def_default_size == 0 -%}
+    {% assign def_description = def_description | append: " Default is an empty list." -%}
+  {% elsif def_prop_config.type == "object" and def_default_size == 0 -%}
+    {% assign def_description = def_description | append: " Default is an empty object." -%}
+  {% elsif def_prop_config.default == "" -%}
+    {% assign def_description = def_description | append: " Default is an empty string." -%}
+  {% else -%}
+    {% assign def_description = def_description | append: " Default is `" | append: def_prop_config.default | append: "`." -%}
+  {% endif -%}
+{% endif -%}
+<tr>
+<td><code>{{ def_prop_name }}</code></td>
+<td>{{ def_required_text }}</td>
+<td>{{ def_type_display }}</td>
+<td>{{ def_description }}</td>
+</tr>
+{% endfor -%}
+</tbody>
+</table>
+{% endif -%}
+{% endfor -%}
+{% endif %}
   {% endunless %}
 {% else %}
   <div class="alert alert-danger">

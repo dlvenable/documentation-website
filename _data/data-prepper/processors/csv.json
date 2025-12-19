@@ -1,37 +1,72 @@
 {
-  "name": "csv",
-  "plugin_type": "processor",
-  "description": "The CSV processor parses comma-separated values from event data into individual fields.",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
   "properties": {
     "source": {
       "type": "string",
       "description": "The field in the event that will be parsed. Default value is <code>message</code>.",
-      "required": false
-    },
-    "quote_character": {
-      "type": "string",
-      "description": "The character used as a text qualifier for a single column of data. Default value is <code>\"</code>.",
-      "required": false
+      "default": "message",
+      "minLength": 1
     },
     "delimiter": {
       "type": "string",
       "description": "The character separating each column. Default value is <code>,</code>.",
-      "required": false
+      "default": ","
     },
     "delete_header": {
       "type": "boolean",
       "description": "If specified, the event header (<code>column_names_source_key</code>) is deleted after the event is parsed. If there is no event header, no action is taken. Default value is true.",
-      "required": false
+      "default": "true"
+    },
+    "normalize_keys": {
+      "type": "boolean",
+      "description": "If set to true, replaces invalid characters with underscore character",
+      "default": "false"
+    },
+    "multiline": {
+      "type": "boolean",
+      "description": "If specified, the source key has multiple lines, including header line",
+      "default": "false"
+    },
+    "quote_character": {
+      "type": "string",
+      "description": "The character used as a text qualifier for a single column of data. Default value is <code>\"</code>.",
+      "default": "\""
     },
     "column_names_source_key": {
       "type": "string",
-      "description": "The field in the event that specifies the CSV column names, which will be automatically detected. If there need to be extra column names, the column names are automatically generated according to their index. If <code>column_names</code> is also defined, the header in <code>column_names_source_key</code> can also be used to generate the event fields. If too few columns are specified in this field, the remaining column names are automatically generated. If too many column names are specified in this field, the CSV processor omits the extra column names.",
-      "required": false
+      "description": "The field in the event that specifies the CSV column names, which will be automatically detected. If there are additional columns in the <code>source</code>, the column names are automatically generated according to column index. If <code>column_names</code> is also defined, the header in <code>column_names_source_key</code> can also be used to generate the event fields. If too few columns are specified in this field, the remaining column names are automatically generated. If too many column names are specified in this field, the CSV processor omits the extra column names."
     },
     "column_names": {
-      "type": "array",
       "description": "User-specified names for the CSV columns. Default value is <code>[column1, column2, ..., columnN]</code> if there are no columns of data in the CSV record and <code>column_names_source_key</code> is not defined. If <code>column_names_source_key</code> is defined, the header in <code>column_names_source_key</code> generates the event fields. If too few columns are specified in this field, the remaining column names are automatically generated. If too many column names are specified in this field, the CSV processor omits the extra column names.",
-      "required": false
+      "examples": [
+        {
+          "description": "Specifies column_one as one of the column names to create",
+          "example": "column_one"
+        }
+      ],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "delete_source": {
+      "type": "boolean",
+      "description": "If true, the configured source field will be deleted after the CSV data is parsed into separate fields."
+    },
+    "csv_when": {
+      "type": "string",
+      "description": "A <a href=\"https://opensearch.org/docs/latest/data-prepper/pipelines/expression-syntax/\">conditional expression</a> such as <code>/some_key == \"test\"</code>. If specified, the <code>csv</code> processor will only run on events when the expression evaluates to true. ",
+      "examples": [
+        {
+          "description": "Only runs the csv processor if the key some_key is null or does not exist.",
+          "example": "/some_key == null"
+        }
+      ]
     }
-  }
+  },
+  "description": "The <code>csv</code> processor parses comma-separated values (CSVs) strings into structured data.",
+  "name": "csv",
+  "primary_fields": [],
+  "documentation": "https://opensearch.org/docs/latest/data-prepper/pipelines/configuration/processors/csv/"
 }

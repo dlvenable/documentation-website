@@ -30,55 +30,65 @@ This creates a clear separation where Data Prepper owns the structural schema ge
 
 ## Components and Interfaces
 
-### JSON Documentation Schema
+### JSON Schema with References Integration
 
-The JSON documentation files will follow a structured schema that mirrors the essential elements of the generated JSON schemas:
+The system now leverages the data-prepper project's new JSON Schema generation with references support. This provides true semantic type information through JSON Schema `$ref` properties.
+
+#### Schema Generation Command
+```bash
+./gradlew :data-prepper-plugin-schema-cli:run --args='--plugin_type=processor --plugin_names=date --use_definitions=true'
+```
+
+#### Generated Schema Structure
+The data-prepper project generates schemas with clean type definitions and references:
 
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "type": "object",
-  "properties": {
-    "name": {
-      "type": "string",
-      "description": "Plugin name"
-    },
-    "plugin_type": {
-      "type": "string", 
-      "enum": ["source", "processor", "sink", "buffer"]
-    },
-    "properties": {
+  "$defs": {
+    "DateMatch": {
       "type": "object",
-      "patternProperties": {
-        ".*": {
-          "type": "object",
-          "properties": {
-            "type": {
-              "type": "string",
-              "description": "Data type (string, boolean, integer, array, object)"
-            },
-            "description": {
-              "type": "string",
-              "description": "HTML-formatted description of the configuration option"
-            },
-            "required": {
-              "type": "boolean",
-              "description": "Whether this property is required"
-            },
-            "default": {
-              "description": "Default value if any"
-            },
-            "properties": {
-              "type": "object",
-              "description": "Nested properties for complex types"
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Represents the event key against which to match patterns. Required if <code>match</code> is configured."
+        },
+        "patterns": {
+          "description": "A list of possible patterns that the timestamp value of the key can have...",
+          "examples": [
+            {
+              "description": "Matches ISO-8601 formatted strings.",
+              "example": "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
             }
-          },
-          "required": ["type", "description"]
+          ],
+          "type": "array",
+          "items": { "type": "string" }
         }
       }
     }
   },
-  "required": ["name", "plugin_type", "properties"]
+  "type": "object",
+  "properties": {
+    "match": {
+      "description": "This option cannot be defined at the same time as <code>from_time_received</code>...",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/DateMatch"
+      }
+    },
+    "from_time_received": {
+      "type": "boolean",
+      "description": "When <code>true</code>, the timestamp from the event metadata..."
+    },
+    "destination": {
+      "type": "string",
+      "description": "The field used to store the timestamp parsed by the date processor...",
+      "default": "@timestamp"
+    }
+  },
+  "name": "date",
+  "description": "The <code>date</code> processor adds a default timestamp to an event...",
+  "documentation": "https://opensearch.org/docs/latest/data-prepper/pipelines/configuration/processors/date/"
 }
 ```
 
@@ -119,42 +129,46 @@ _data-prepper/pipelines/configuration/
 
 ## Data Models
 
-### JSON Documentation File Structure
+### Documentation Integration with Schema References
 
+The documentation system processes JSON schemas with references to extract semantic type information:
+
+#### Reference Resolution Process
+1. **Schema Parsing**: Parse the generated JSON schema with `$defs` and `$ref` properties
+2. **Reference Resolution**: Resolve `$ref` pointers to extract the actual type definitions
+3. **Type Name Extraction**: Use the clean type names from `$defs` keys (e.g., "DateMatch")
+4. **Array Handling**: Handle arrays of references (`"items": {"$ref": "#/$defs/DateMatch"}`)
+5. **Documentation Generation**: Generate tables with proper type names and links
+
+#### Example Schema Processing
 ```json
 {
-  "name": "grok",
-  "plugin_type": "processor",
+  "$defs": {
+    "DateMatch": { 
+      "type": "object",
+      "properties": { "key": {...}, "patterns": {...} }
+    }
+  },
   "properties": {
     "match": {
-      "type": "object",
-      "description": "Specifies which keys should match specific patterns. Each key is a source field. The value is a list of possible grok patterns to match on.",
-      "required": false,
-      "properties": {
-        "field_name": {
-          "type": "array",
-          "description": "List of grok patterns to match against this field",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "target_key": {
-      "type": "string", 
-      "description": "Specifies a parent-level key used to store all captures. Default value is <code>null</code>.",
-      "required": false,
-      "default": null
-    },
-    "break_on_match": {
-      "type": "boolean",
-      "description": "Specifies whether to match all patterns (<code>false</code>) or stop once the first successful match is found (<code>true</code>).",
-      "required": false,
-      "default": true
+      "type": "array",
+      "items": { "$ref": "#/$defs/DateMatch" }
     }
   }
 }
 ```
+
+Becomes:
+- **Type Display**: "List of [DateMatch](#datematch)" (for array of references)
+- **Link Target**: `#datematch` (lowercase type name)
+- **Section Generation**: Separate table for DateMatch properties with anchor `id="datematch"`
+
+#### Type Display Rules
+1. **Direct Reference**: `{"$ref": "#/$defs/TypeName"}` → "[TypeName](#typename)"
+2. **Array of References**: `{"type": "array", "items": {"$ref": "#/$defs/TypeName"}}` → "List of [TypeName](#typename)"
+3. **Primitive Arrays**: `{"type": "array", "items": {"type": "string"}}` → "List of String"
+4. **Primitive Types**: `{"type": "string"}` → "String"
+5. **Generic Objects**: `{"type": "object"}` → "Object"
 
 ### Markdown Table Generation
 

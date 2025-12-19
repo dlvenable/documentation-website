@@ -19,7 +19,7 @@ This table is generated from JSON documentation. Do not edit it directly.
 Source: _data/data-prepper/processors/parse-json.json
 -->
 
-{% include data-prepper-config-table.html plugin="parse-json" plugin_type="processor" %}
+{% include data-prepper-config-table.html plugin="parse_json" plugin_type="processor" %}
 
 ## Usage
 

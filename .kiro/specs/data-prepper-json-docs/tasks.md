@@ -86,55 +86,77 @@
   - Validate generated documentation matches original format
   - _Requirements: 5.4, 5.5_
 
-- [ ] 6. Implement error handling and reporting
-  - [ ] 6.1 Add build-time validation and error reporting
+- [x] 6. Implement JSON Schema reference processing system
+  - [x] 6.1 Add JSON Schema reference resolution to Liquid templates
+    - Update Liquid template to parse `$ref` properties and resolve to `$defs` 
+    - Handle direct references: `{"$ref": "#/$defs/TypeName"}` → "[TypeName](#typename)"
+    - Handle array references: `{"type": "array", "items": {"$ref": "#/$defs/TypeName"}}` → "List of [TypeName](#typename)"
+    - Generate anchor links using lowercase type names from `$defs` keys
+    - _Requirements: 3.1, 3.2_
+
+- [x] 6.2 Create test schema with references for date processor
+    - Replace current `_data/data-prepper/processors/date.json` with actual schema output from data-prepper
+    - Use the schema structure with `$defs` and `$ref` properties as provided
+    - Test that template correctly processes references and generates proper type links
+    - Verify that `DateMatch` section is generated from `$defs` with correct anchor
+    - _Requirements: 3.1, 3.2_
+
+- [x] 6.3 Integrate with data-prepper schema generation
+    - Use data-prepper's new `--use_definitions=true` flag to generate schemas with `$defs` and `$ref`
+    - Replace manual JSON documentation files with generated schemas from data-prepper project
+    - Create build process to fetch latest schemas from data-prepper during documentation builds
+    - _Requirements: 2.1, 6.1, 6.2_
+
+- [ ] 7. Implement error handling and reporting
+  - [ ] 7.1 Add build-time validation and error reporting
     - Create Jekyll hook to validate JSON files during build
     - Generate clear error messages for invalid JSON or missing files
     - Implement graceful fallback to original Markdown if JSON processing fails
     - _Requirements: 4.5_
 
-- [ ] 6.2 Write property test for error reporting clarity
+- [ ] 7.2 Write property test for error reporting clarity
   - **Property 10: Error reporting clarity**
   - **Validates: Requirements 4.5**
 
-- [ ] 6.3 Create schema generation support for data-prepper project
+- [ ] 7.3 Create schema generation support for data-prepper project
   - Design interface for generating schemas without descriptions
   - Implement merge functionality for combining schemas with documentation
   - Ensure merge process doesn't persist results to source control
   - _Requirements: 6.3, 6.4_
 
-- [ ] 6.4 Write property test for schema generation without descriptions
+- [ ] 7.4 Write property test for schema generation without descriptions
   - **Property 8: Schema generation without descriptions**
   - **Validates: Requirements 6.3**
 
-- [ ] 6.5 Write property test for build-time merge without persistence
+- [ ] 7.5 Write property test for build-time merge without persistence
   - **Property 9: Build-time merge without persistence**
   - **Validates: Requirements 6.4**
 
-- [ ] 7. Extend to sources and sinks
-  - [ ] 7.1 Migrate source plugin documentation
+- [ ] 8. Extend to sources and sinks
+  - [ ] 8.1 Migrate source plugin documentation
     - Apply migration process to http, s3, and kafka sources
     - Update source Markdown files to use Liquid templates
     - Validate generated documentation quality
     - _Requirements: 1.5, 5.1_
 
-- [ ] 7.2 Migrate sink plugin documentation
+- [ ] 8.2 Migrate sink plugin documentation
   - Apply migration process to opensearch, s3, and file sinks
   - Update sink Markdown files to use Liquid templates
   - Test complete build process with all plugin types
   - _Requirements: 1.5, 5.1_
 
-- [ ] 8. Final validation and testing
+- [ ] 9. Final validation and testing
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Documentation and deployment preparation
-  - [ ] 9.1 Create documentation for JSON schema format
+- [ ] 10. Documentation and deployment preparation
+  - [ ] 10.1 Create documentation for JSON schema format
     - Document JSON schema structure for future contributors
     - Create examples and guidelines for authoring JSON documentation
     - Add validation instructions and troubleshooting guide
+    - Include guidance on using `title` field for semantic types
     - _Requirements: 3.4_
 
-- [ ] 9.2 Prepare deployment checklist
+- [ ] 10.2 Prepare deployment checklist
   - Verify all existing documentation renders correctly
   - Test build performance with JSON processing
   - Create rollback plan if issues arise
