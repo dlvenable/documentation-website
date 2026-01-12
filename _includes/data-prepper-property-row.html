@@ -1,0 +1,115 @@
+{% comment %}
+Reusable property row generator for Data Prepper configuration tables
+Parameters:
+- prop_name: The property name
+- prop_config: The property configuration object
+- plugin_data: The full plugin data (for $defs lookups)
+- required_list: Array of required property names (optional)
+{% endcomment %}
+
+{% assign prop_name = include.prop_name %}
+{% assign prop_config = include.prop_config %}
+{% assign plugin_data = include.plugin_data %}
+{% assign required_list = include.required_list | default: empty %}
+
+{% assign enum_description = "" %}
+{% assign required_text = "No" %}
+
+{% comment %} Check if property is required {% endcomment %}
+{% if prop_config.required == true or required_list contains prop_name %}
+  {% assign required_text = "Yes" %}
+{% endif %}
+
+{% assign type_display = prop_config.type | capitalize %}
+
+{% comment %} Handle array types {% endcomment %}
+{% if prop_config.type == "array" and prop_config.items.type %}
+  {% assign type_display = "List" %}
+{% endif %}
+
+{% comment %} Handle JSON Schema references {% endcomment %}
+{% if prop_config["$ref"] %}
+  {% assign ref_parts = prop_config["$ref"] | split: "/" %}
+  {% assign type_name = ref_parts.last %}
+  {% assign ref_def = plugin_data["$defs"][type_name] %}
+  
+  {% if ref_def.type == "string" and ref_def.enum %}
+    {% assign type_display = "String" %}
+    {% assign enum_html_parts = "" %}
+    {% for enum_value in ref_def.enum %}
+      {% if forloop.first %}
+        {% assign enum_html_parts = "<code>" | append: enum_value | append: "</code>" %}
+      {% else %}
+        {% assign enum_html_parts = enum_html_parts | append: ", <code>" | append: enum_value | append: "</code>" %}
+      {% endif %}
+    {% endfor %}
+    {% assign enum_description = " Possible values: " | append: enum_html_parts | append: "." %}
+  {% else %}
+    {% assign display_name = type_name %}
+    {% if ref_def.title %}
+      {% assign display_name = ref_def.title %}
+    {% endif %}
+    {% assign type_display = '<a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' %}
+  {% endif %}
+  
+{% elsif prop_config.type == "array" and prop_config.items["$ref"] %}
+  {% assign ref_parts = prop_config.items["$ref"] | split: "/" %}
+  {% assign type_name = ref_parts.last %}
+  {% assign ref_def = plugin_data["$defs"][type_name] %}
+  
+  {% if ref_def.type == "string" and ref_def.enum %}
+    {% assign type_display = "List" %}
+    {% assign enum_html_parts = "" %}
+    {% for enum_value in ref_def.enum %}
+      {% if forloop.first %}
+        {% assign enum_html_parts = "<code>" | append: enum_value | append: "</code>" %}
+      {% else %}
+        {% assign enum_html_parts = enum_html_parts | append: ", <code>" | append: enum_value | append: "</code>" %}
+      {% endif %}
+    {% endfor %}
+    {% assign enum_description = " Possible values: " | append: enum_html_parts | append: "." %}
+  {% else %}
+    {% assign display_name = type_name %}
+    {% if ref_def.title %}
+      {% assign display_name = ref_def.title %}
+    {% endif %}
+    {% assign type_display = 'List of <a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' %}
+  {% endif %}
+  
+{% elsif prop_config.type == "object" %}
+  {% if prop_config.properties.size > 0 %}
+    {% assign type_display = '<a href="#' | append: prop_name | downcase | append: '">' | append: prop_name | capitalize | append: '</a>' %}
+  {% else %}
+    {% assign type_display = "Object" %}
+  {% endif %}
+{% endif %}
+
+{% comment %} Build description with default value handling {% endcomment %}
+{% assign description = prop_config.description | strip %}
+{% if prop_config.default != null %}
+  {% assign default_size = prop_config.default | size %}
+  {% if prop_config.type == "array" and default_size == 0 %}
+    {% assign description = description | append: " Default is an empty list." %}
+  {% elsif prop_config.type == "object" and default_size == 0 %}
+    {% assign description = description | append: " Default is an empty object." %}
+  {% elsif prop_config.default == "" %}
+    {% assign description = description | append: " Default is an empty string." %}
+  {% else %}
+    {% assign description = description | append: " Default is <code>" | append: prop_config.default | append: "</code>." %}
+  {% endif %}
+{% endif %}
+
+{% if prop_config.examples.size > 0 %}
+  {% assign description = description | append: " " | append: prop_config.examples[0].description | strip %}
+{% endif %}
+
+{% if enum_description %}
+  {% assign description = description | append: enum_description %}
+{% endif %}
+
+<tr>
+<td><code>{{ prop_name }}</code></td>
+<td>{{ required_text }}</td>
+<td>{{ type_display }}</td>
+<td>{{ description }}</td>
+</tr>

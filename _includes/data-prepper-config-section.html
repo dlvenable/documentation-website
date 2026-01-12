@@ -1,0 +1,45 @@
+{% comment %}
+Reusable configuration section generator for Data Prepper
+Parameters:
+- section_name: Display name for the section
+- section_id: HTML anchor ID for the section
+- properties: The properties object to render
+- plugin_data: The full plugin data (for $defs lookups)
+- required_list: Array of required property names (optional)
+- show_header: Whether to show the section header (default: true)
+{% endcomment %}
+
+{% assign section_name = include.section_name %}
+{% assign section_id = include.section_id %}
+{% assign properties = include.properties %}
+{% assign plugin_data = include.plugin_data %}
+{% assign required_list = include.required_list | default: empty %}
+{% assign show_header = include.show_header | default: true %}
+
+{% if show_header %}
+<h3 id="{{ section_id | downcase }}">{{ section_name }}</h3>
+
+<p>The following table describes the options for the <code>{{ section_name }}</code> configuration.</p>
+{% endif %}
+
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Required</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+{% for property in properties %}
+  {% assign prop_name = property[0] %}
+  {% assign prop_config = property[1] %}
+  {% include data-prepper-property-row.html 
+     prop_name=prop_name 
+     prop_config=prop_config 
+     plugin_data=plugin_data 
+     required_list=required_list %}
+{% endfor %}
+</tbody>
+</table>

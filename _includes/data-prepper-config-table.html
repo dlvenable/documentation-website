@@ -29,321 +29,50 @@ Usage: {% include data-prepper-config-table.html plugin="[PLUGIN_NAME]" plugin_t
     </div>
   {% else %}
 
-<table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Required</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-{% for property in plugin_data.properties -%}
-{% assign prop_name = property[0] -%}
-{% assign prop_config = property[1] -%}
-{% assign enum_description = "" -%}
-{% assign required_text = "No" -%}
-{% if prop_config.required == true -%}
-{% assign required_text = "Yes" -%}
-{% endif -%}
-{% assign type_display = prop_config.type | capitalize -%}
-{% comment %} Handle array types with items specification {% endcomment %}
-{% if prop_config.type == "array" and prop_config.items.type -%}
-{% assign type_display = "List" -%}
-{% endif -%}
-{% comment %} Handle JSON Schema references {% endcomment %}
-{% if prop_config["$ref"] -%}
-  {% comment %} Direct reference: {"$ref": "#/$defs/TypeName"} {% endcomment %}
-  {% assign ref_parts = prop_config["$ref"] | split: "/" -%}
-  {% assign type_name = ref_parts.last -%}
-  {% assign ref_def = plugin_data["$defs"][type_name] -%}
-  {% comment %} Check if this is a string enum type {% endcomment %}
-  {% if ref_def.type == "string" and ref_def.enum -%}
-    {% comment %} For string enums, display as String and add enum values to description {% endcomment %}
-    {% assign type_display = "String" -%}
-    {% assign enum_values = ref_def.enum | join: "`, `" -%}
-    {% assign enum_description = " Possible values: `" | append: enum_values | append: "`." -%}
-  {% else -%}
-    {% comment %} For object types, create a link {% endcomment %}
-    {% assign display_name = type_name -%}
-    {% if ref_def.title -%}
-      {% assign display_name = ref_def.title -%}
-    {% endif -%}
-    {% assign type_display = '<a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
-  {% endif -%}
-{% elsif prop_config.type == "array" and prop_config.items["$ref"] -%}
-  {% comment %} Array of references: {"type": "array", "items": {"$ref": "#/$defs/TypeName"}} {% endcomment %}
-  {% assign ref_parts = prop_config.items["$ref"] | split: "/" -%}
-  {% assign type_name = ref_parts.last -%}
-  {% assign ref_def = plugin_data["$defs"][type_name] -%}
-  {% comment %} Check if this is a string enum type {% endcomment %}
-  {% if ref_def.type == "string" and ref_def.enum -%}
-    {% comment %} For string enums, display as List and add enum values to description {% endcomment %}
-    {% assign type_display = "List" -%}
-    {% assign enum_values = ref_def.enum | join: "`, `" -%}
-    {% assign enum_description = " Possible values: `" | append: enum_values | append: "`." -%}
-  {% else -%}
-    {% comment %} For object types, create a link {% endcomment %}
-    {% assign display_name = type_name -%}
-    {% if ref_def.title -%}
-      {% assign display_name = ref_def.title -%}
-    {% endif -%}
-    {% assign type_display = 'List of <a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
-  {% endif -%}
-{% elsif prop_config.type == "object" -%}
-  {% comment %} Generic object or object with nested properties {% endcomment %}
-  {% if prop_config.properties.size > 0 -%}
-    {% assign type_display = '<a href="#' | append: prop_name | downcase | append: '">' | append: prop_name | capitalize | append: '</a>' -%}
-  {% else -%}
-    {% assign type_display = "Object" -%}
-  {% endif -%}
-{% endif -%}
-{% comment %} Build description with proper default value handling {% endcomment %}
-{% assign description = prop_config.description | strip -%}
-{% if prop_config.default != null -%}
-  {% assign default_size = prop_config.default | size -%}
-  {% if prop_config.type == "array" and default_size == 0 -%}
-    {% assign description = description | append: " Default is an empty list." -%}
-  {% elsif prop_config.type == "object" and default_size == 0 -%}
-    {% assign description = description | append: " Default is an empty object." -%}
-  {% elsif prop_config.default == "" -%}
-    {% assign description = description | append: " Default is an empty string." -%}
-  {% else -%}
-    {% assign description = description | append: " Default is `" | append: prop_config.default | append: "`." -%}
-  {% endif -%}
-{% endif -%}
-{% if prop_config.examples.size > 0 -%}
-  {% assign description = description | append: " " | append: prop_config.examples[0].description | strip -%}
-{% endif -%}
-{% comment %} Add enum values if this is a string enum {% endcomment %}
-{% if enum_description -%}
-  {% assign description = description | append: enum_description -%}
-{% endif -%}
-<tr>
-<td><code>{{ prop_name }}</code></td>
-<td>{{ required_text }}</td>
-<td>{{ type_display }}</td>
-<td>{{ description }}</td>
-</tr>
-{% endfor -%}
-</tbody>
-</table>
+{% comment %} Main properties table {% endcomment %}
+{% include data-prepper-config-section.html 
+   section_name=plugin_name 
+   section_id=plugin_name 
+   properties=plugin_data.properties 
+   plugin_data=plugin_data 
+   show_header=false %}
 
 {% comment %} Generate separate tables for nested object properties {% endcomment %}
-{% for property in plugin_data.properties -%}
-{% assign prop_name = property[0] -%}
-{% assign prop_config = property[1] -%}
-{% if prop_config.properties and prop_config.properties.size > 0 -%}
-
-### {{ prop_name | replace: "_", " " | capitalize }} {#{{ prop_name | downcase }}}
-
-The following table describes the options for the `{{ prop_name }}` configuration.
-
-<table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Required</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-{% for nested_property in prop_config.properties -%}
-{% assign nested_prop_name = nested_property[0] -%}
-{% assign nested_prop_config = nested_property[1] -%}
-{% assign nested_enum_description = "" -%}
-{% assign nested_required_text = "No" -%}
-{% if nested_prop_config.required == true -%}
-{% assign nested_required_text = "Yes" -%}
-{% endif -%}
-{% assign nested_type_display = nested_prop_config.type | capitalize -%}
-{% if nested_prop_config.type == "array" and nested_prop_config.items.type -%}
-{% assign nested_type_display = "List" -%}
-{% endif -%}
-{% comment %} Handle JSON Schema references for nested properties {% endcomment %}
-{% if nested_prop_config["$ref"] -%}
-  {% assign ref_parts = nested_prop_config["$ref"] | split: "/" -%}
-  {% assign type_name = ref_parts.last -%}
-  {% assign ref_def = plugin_data["$defs"][type_name] -%}
-  {% comment %} Check if this is a string enum type {% endcomment %}
-  {% if ref_def.type == "string" and ref_def.enum -%}
-    {% comment %} For string enums, display as String and add enum values to description {% endcomment %}
-    {% assign nested_type_display = "String" -%}
-    {% assign enum_values = ref_def.enum | join: "`, `" -%}
-    {% assign nested_enum_description = " Possible values: `" | append: enum_values | append: "`." -%}
-  {% else -%}
-    {% comment %} For object types, create a link {% endcomment %}
-    {% assign display_name = type_name -%}
-    {% if ref_def.title -%}
-      {% assign display_name = ref_def.title -%}
-    {% endif -%}
-    {% assign nested_type_display = '<a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
-  {% endif -%}
-{% elsif nested_prop_config.type == "array" and nested_prop_config.items["$ref"] -%}
-  {% assign ref_parts = nested_prop_config.items["$ref"] | split: "/" -%}
-  {% assign type_name = ref_parts.last -%}
-  {% assign ref_def = plugin_data["$defs"][type_name] -%}
-  {% comment %} Check if this is a string enum type {% endcomment %}
-  {% if ref_def.type == "string" and ref_def.enum -%}
-    {% comment %} For string enums, display as List and add enum values to description {% endcomment %}
-    {% assign nested_type_display = "List" -%}
-    {% assign enum_values = ref_def.enum | join: "`, `" -%}
-    {% assign nested_enum_description = " Possible values: `" | append: enum_values | append: "`." -%}
-  {% else -%}
-    {% comment %} For object types, create a link {% endcomment %}
-    {% assign display_name = type_name -%}
-    {% if ref_def.title -%}
-      {% assign display_name = ref_def.title -%}
-    {% endif -%}
-    {% assign nested_type_display = 'List of <a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
-  {% endif -%}
-{% elsif nested_prop_config.type == "object" -%}
-  {% if nested_prop_config.properties.size > 0 -%}
-    {% assign nested_type_display = '<a href="#' | append: nested_prop_name | downcase | append: '">' | append: nested_prop_name | capitalize | append: '</a>' -%}
-  {% else -%}
-    {% assign nested_type_display = "Object" -%}
-  {% endif -%}
-{% endif -%}
-{% comment %} Build nested description with proper default value handling {% endcomment %}
-{% assign nested_description = nested_prop_config.description | strip -%}
-{% if nested_prop_config.default != null -%}
-  {% assign nested_default_size = nested_prop_config.default | size -%}
-  {% if nested_prop_config.type == "array" and nested_default_size == 0 -%}
-    {% assign nested_description = nested_description | append: " Default is an empty list." -%}
-  {% elsif nested_prop_config.type == "object" and nested_default_size == 0 -%}
-    {% assign nested_description = nested_description | append: " Default is an empty object." -%}
-  {% elsif nested_prop_config.default == "" -%}
-    {% assign nested_description = nested_description | append: " Default is an empty string." -%}
-  {% else -%}
-    {% assign nested_description = nested_description | append: " Default is `" | append: nested_prop_config.default | append: "`." -%}
-  {% endif -%}
-{% endif -%}
-{% comment %} Add enum values if this is a string enum {% endcomment %}
-{% if nested_enum_description -%}
-  {% assign nested_description = nested_description | append: nested_enum_description -%}
-{% endif -%}
-<tr>
-<td><code>{{ nested_prop_name }}</code></td>
-<td>{{ nested_required_text }}</td>
-<td>{{ nested_type_display }}</td>
-<td>{{ nested_description }}</td>
-</tr>
-{% endfor -%}
-</tbody>
-</table>
-{% endif -%}
+{% for property in plugin_data.properties %}
+  {% assign prop_name = property[0] %}
+  {% assign prop_config = property[1] %}
+  {% if prop_config.properties and prop_config.properties.size > 0 %}
+    {% assign section_name = prop_name | replace: "_", " " | capitalize %}
+    {% include data-prepper-config-section.html 
+       section_name=section_name 
+       section_id=prop_name 
+       properties=prop_config.properties 
+       plugin_data=plugin_data %}
+  {% endif %}
 {% endfor %}
 
 {% comment %} Generate tables for JSON Schema $defs types {% endcomment %}
-{% if plugin_data["$defs"] -%}
-{% for def_entry in plugin_data["$defs"] -%}
-{% assign def_name = def_entry[0] -%}
-{% assign def_config = def_entry[1] -%}
-{% comment %} Skip string enum types since they are handled inline {% endcomment %}
-{% unless def_config.type == "string" and def_config.enum -%}
-{% if def_config.properties and def_config.properties.size > 0 -%}
-{% comment %} Use title if available, otherwise use the type name {% endcomment %}
-{% assign display_name = def_name -%}
-{% if def_config.title -%}
-  {% assign display_name = def_config.title -%}
-{% endif -%}
-
-### {{ display_name }} {#{{ def_name | downcase }}}
-
-The following table describes the options for the `{{ display_name }}` configuration.
-
-<table>
-<thead>
-<tr>
-<th>Option</th>
-<th>Required</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-{% for def_property in def_config.properties -%}
-{% assign def_prop_name = def_property[0] -%}
-{% assign def_prop_config = def_property[1] -%}
-{% assign def_enum_description = "" -%}
-{% assign def_required_text = "No" -%}
-{% if def_config.required contains def_prop_name -%}
-{% assign def_required_text = "Yes" -%}
-{% endif -%}
-{% assign def_type_display = def_prop_config.type | capitalize -%}
-{% if def_prop_config.type == "array" and def_prop_config.items.type -%}
-{% assign def_type_display = "List" -%}
-{% endif -%}
-{% comment %} Handle JSON Schema references in $defs {% endcomment %}
-{% if def_prop_config["$ref"] -%}
-  {% assign ref_parts = def_prop_config["$ref"] | split: "/" -%}
-  {% assign type_name = ref_parts.last -%}
-  {% assign ref_def = plugin_data["$defs"][type_name] -%}
-  {% comment %} Check if this is a string enum type {% endcomment %}
-  {% if ref_def.type == "string" and ref_def.enum -%}
-    {% comment %} For string enums, display as String and add enum values to description {% endcomment %}
-    {% assign def_type_display = "String" -%}
-    {% assign enum_values = ref_def.enum | join: "`, `" -%}
-    {% assign def_enum_description = " Possible values: `" | append: enum_values | append: "`." -%}
-  {% else -%}
-    {% comment %} For object types, create a link {% endcomment %}
-    {% assign display_name = type_name -%}
-    {% if ref_def.title -%}
-      {% assign display_name = ref_def.title -%}
-    {% endif -%}
-    {% assign def_type_display = '<a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
-  {% endif -%}
-{% elsif def_prop_config.type == "array" and def_prop_config.items["$ref"] -%}
-  {% assign ref_parts = def_prop_config.items["$ref"] | split: "/" -%}
-  {% assign type_name = ref_parts.last -%}
-  {% assign ref_def = plugin_data["$defs"][type_name] -%}
-  {% comment %} Check if this is a string enum type {% endcomment %}
-  {% if ref_def.type == "string" and ref_def.enum -%}
-    {% comment %} For string enums, display as List and add enum values to description {% endcomment %}
-    {% assign def_type_display = "List" -%}
-    {% assign enum_values = ref_def.enum | join: "`, `" -%}
-    {% assign def_enum_description = " Possible values: `" | append: enum_values | append: "`." -%}
-  {% else -%}
-    {% comment %} For object types, create a link {% endcomment %}
-    {% assign display_name = type_name -%}
-    {% if ref_def.title -%}
-      {% assign display_name = ref_def.title -%}
-    {% endif -%}
-    {% assign def_type_display = 'List of <a href="#' | append: type_name | downcase | append: '">' | append: display_name | append: '</a>' -%}
-  {% endif -%}
-{% endif -%}
-{% comment %} Build description with default value handling {% endcomment %}
-{% assign def_description = def_prop_config.description | strip -%}
-{% if def_prop_config.default != null -%}
-  {% assign def_default_size = def_prop_config.default | size -%}
-  {% if def_prop_config.type == "array" and def_default_size == 0 -%}
-    {% assign def_description = def_description | append: " Default is an empty list." -%}
-  {% elsif def_prop_config.type == "object" and def_default_size == 0 -%}
-    {% assign def_description = def_description | append: " Default is an empty object." -%}
-  {% elsif def_prop_config.default == "" -%}
-    {% assign def_description = def_description | append: " Default is an empty string." -%}
-  {% else -%}
-    {% assign def_description = def_description | append: " Default is `" | append: def_prop_config.default | append: "`." -%}
-  {% endif -%}
-{% endif -%}
-{% comment %} Add enum values if this is a string enum {% endcomment %}
-{% if def_enum_description -%}
-  {% assign def_description = def_description | append: def_enum_description -%}
-{% endif -%}
-<tr>
-<td><code>{{ def_prop_name }}</code></td>
-<td>{{ def_required_text }}</td>
-<td>{{ def_type_display }}</td>
-<td>{{ def_description }}</td>
-</tr>
-{% endfor -%}
-</tbody>
-</table>
-{% endif -%}
-{% endunless -%}
-{% endfor -%}
+{% if plugin_data["$defs"] %}
+  {% for def_entry in plugin_data["$defs"] %}
+    {% assign def_name = def_entry[0] %}
+    {% assign def_config = def_entry[1] %}
+    {% comment %} Skip string enum types since they are handled inline {% endcomment %}
+    {% unless def_config.type == "string" and def_config.enum %}
+      {% if def_config.properties and def_config.properties.size > 0 %}
+        {% comment %} Use title if available, otherwise use the type name {% endcomment %}
+        {% assign display_name = def_name %}
+        {% if def_config.title %}
+          {% assign display_name = def_config.title %}
+        {% endif %}
+        {% include data-prepper-config-section.html 
+           section_name=display_name 
+           section_id=def_name 
+           properties=def_config.properties 
+           plugin_data=plugin_data 
+           required_list=def_config.required %}
+      {% endif %}
+    {% endunless %}
+  {% endfor %}
 {% endif %}
   {% endunless %}
 {% else %}
