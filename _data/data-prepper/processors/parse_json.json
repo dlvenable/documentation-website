@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "HandleFailedEventsOption": {
+      "type": "string",
+      "enum": [
+        "drop",
+        "drop_silently",
+        "skip",
+        "skip_silently"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "The field in the event that will be parsed. The default value is <code>message</code>.",
+      "default": "message",
+      "minLength": 1
+    },
+    "destination": {
+      "type": "string",
+      "description": "The destination field of the structured object from the parsed JSON. Defaults to the root of the event. Cannot be an empty string, <code>/</code>, or any whitespace-only string because these are not valid event fields.",
+      "pattern": "^(?!\\s*$)(?!^/$).+"
+    },
+    "depth": {
+      "type": "integer",
+      "description": "Indicates the depth at which the nested values of the event are not parsed any more. Default is 0, which means all levels of nested values are parsed. If the depth is 1, only the top level keys are parsed and all its nested values are represented as strings",
+      "default": "0",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "pointer": {
+      "type": "string",
+      "description": "A JSON pointer to the field to be parsed. There is no pointer by default, meaning the entire source is parsed. The pointer can access JSON array indexes as well. If the JSON pointer is invalid then the entire source data is parsed into the outgoing event. If the key that is pointed to already exists in the event and the destination is the root, then the pointer uses the entire path of the key.",
+      "examples": [
+        {
+          "description": "The field at '/example/pointer' in the input data will be parsed if the pointer is valid.",
+          "example": "/example/pointer"
+        }
+      ]
+    },
+    "overwrite_if_destination_exists": {
+      "type": "boolean",
+      "description": "Overwrites the destination if set to true. Set to false to prevent changing a destination value that exists. Defaults to true.",
+      "default": "true"
+    },
+    "delete_source": {
+      "type": "boolean",
+      "description": "If true, the configured <code>source</code> field will be deleted after the JSON data is parsed into separate fields."
+    },
+    "tags_on_failure": {
+      "description": "A list of strings specifying the tags to be set in the event when the processor fails or an unknown exception occurs during parsing.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "handle_failed_events": {
+      "$ref": "#/$defs/HandleFailedEventsOption",
+      "description": "Determines how to handle events with JSON processing errors. Options include 'skip', which will log the error and send the event downstream to the next processor, and 'skip_silently', which will send the Event downstream to the next processor without logging the error. Default is 'skip'."
+    },
+    "normalize_keys": {
+      "type": "boolean",
+      "description": "If specified, replaces invalid characters with underscore character"
+    },
+    "parse_when": {
+      "type": "string",
+      "description": "A <a href=\"https://opensearch.org/docs/latest/data-prepper/pipelines/expression-syntax/\">conditional expression</a> such as <code>/some_key == \"test\"</code>. If specified, the <code>parse_json</code> processor will only run on events when the expression evaluates to true. ",
+      "examples": [
+        {
+          "description": "Only runs parsing on the Event if some_key is null or doesn't exist.",
+          "example": "/some_key == null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "handle_failed_events"
+  ],
+  "description": "The <code>parse_json</code> processor parses JSON data from fields in events.",
+  "name": "parse_json",
+  "primary_fields": [],
+  "documentation": "https://opensearch.org/docs/latest/data-prepper/pipelines/configuration/processors/parse-json/"
+}
